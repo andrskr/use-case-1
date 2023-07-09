@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCountries } from "./use-countries";
 
-export function Countries({ query, populationLimit }) {
-  const { countries, handleNext, handlePrev, isStale } = useCountries(
-    query,
-    populationLimit
+export function Countries({ query, populationLimit, sortOrder }) {
+  const filters = useMemo(
+    () => ({ query, populationLimit, sortOrder }),
+    [query, populationLimit, sortOrder]
   );
+
+  const { countries, handleNext, handlePrev, isStale } = useCountries(filters);
 
   return (
     <div

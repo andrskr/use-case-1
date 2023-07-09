@@ -8,6 +8,8 @@ import { useState } from "react";
 export function App() {
   const [query, setQuery] = useState("");
   const [populationLimit, setPopulationLimit] = useState(Infinity);
+  const [sortOrder, setSortOrder] = useState("ascend");
+
   const handlePrevPage = () => {
     // Add your logic for loading the previous page here
   };
@@ -23,8 +25,14 @@ export function App() {
         query={query}
         populationLimit={populationLimit}
         setPopulationLimit={setPopulationLimit}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
       />
-      <Countries query={query} populationLimit={populationLimit} />
+      <Countries
+        query={query}
+        populationLimit={populationLimit}
+        sortOrder={sortOrder}
+      />
       {/*<Pagination onNextPage={handleNextPage} onPrevPage={handlePrevPage} />*/}
     </main>
   );

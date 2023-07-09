@@ -4,13 +4,10 @@ import { getAll } from "../../common/api/country";
 const LIMIT = 15;
 const ONE_MIL = 1_000_000;
 
-export function useCountries(query, populationLimit) {
+export function useCountries(filters) {
   const [countries, setCountries] = useState([]);
   const [start, setStart] = useState(0);
-  const filters = useMemo(
-    () => ({ query, populationLimit }),
-    [query, populationLimit]
-  );
+
   const deferredFilters = useDeferredValue(filters);
   const isStale = filters !== deferredFilters;
 
@@ -47,20 +44,30 @@ export function useCountries(query, populationLimit) {
 
   const currentCountries = useMemo(() => {
     const lowerCaseSearchString = deferredFilters.query.toLowerCase();
-    const filteredCountries = countries.filter((country) => {
-      const isNameMatched = country.name.common
-        .toLowerCase()
-        .includes(lowerCaseSearchString);
-      const parsedPopulation = Number.parseFloat(
-        deferredFilters.populationLimit
-      );
+    const filteredCountries = countries
+      .filter((country) => {
+        const isNameMatched = country.name.common
+          .toLowerCase()
+          .includes(lowerCaseSearchString);
+        const parsedPopulation = Number.parseFloat(
+          deferredFilters.populationLimit
+        );
 
-      const isPopulationMatched = Number.isFinite(parsedPopulation)
-        ? country.population / 1_000_000 < parsedPopulation
-        : true;
+        const isPopulationMatched = Number.isFinite(parsedPopulation)
+          ? country.population / 1_000_000 < parsedPopulation
+          : true;
 
-      return isNameMatched && isPopulationMatched;
-    });
+        return isNameMatched && isPopulationMatched;
+      })
+      .sort((a, b) => {
+        if (deferredFilters.sortOrder === "ascend") {
+          return a.name.common.localeCompare(b.name.common);
+        } else if (deferredFilters.sortOrder === "descend") {
+          return b.name.common.localeCompare(a.name.common);
+        } else {
+          return 0; // default to original order if sortOrder is neither 'ascend' nor 'descend'
+        }
+      });
 
     return filteredCountries.slice(start, start + LIMIT);
   }, [deferredFilters, start, countries]);

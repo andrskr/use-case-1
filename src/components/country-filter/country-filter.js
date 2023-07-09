@@ -7,9 +7,9 @@ export function CountryFilter({
   query,
   populationLimit,
   setPopulationLimit,
+  sortOrder,
+  setSortOrder,
 }) {
-  const [sortOrder, setSortOrder] = useState("ascending");
-
   const handleSubmit = (e) => {
     e.preventDefault();
     // Add your API call here using countryName, countryPopulation, and sortOrder
@@ -46,8 +46,8 @@ export function CountryFilter({
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
         >
-          <option value="ascending">Ascending</option>
-          <option value="descending">Descending</option>
+          <option value="ascend">Ascend</option>
+          <option value="descend">Descend</option>
         </select>
       </div>
     </form>
