@@ -1,0 +1,184 @@
+My second task requiremest:
+1. Create a function that accepts a string as a parameter and can filter by country `name/common`.
+
+2. The filter should search for countries names that contains string from attributes (e.g. providing `st` as attribute I could find `Estonia`, providing `Sp` I could find `Spain`)
+
+3. search should be case insensitive (e.g., providing `sT` should find `Estonia`)
+ChatGPT
+You can achieve this functionality by creating a filter function that checks if the name/common of each country contains the given string, using the JavaScript includes function. The includes function is case-sensitive, but you can make your search case-insensitive by converting both the country name and the search string to lower case using the toLowerCase function.
+
+Here is the filter function that meets your requirements:
+
+javascript
+Copy code
+const filterCountries = (countries, searchString) => {
+    const lowerCaseSearchString = searchString.toLowerCase();
+    return countries.filter(country => country.name.common.toLowerCase().includes(lowerCaseSearchString));
+};
+This function takes an array of countries and a search string as parameters, and returns an array of countries where the name/common contains the search string, ignoring case.
+
+You can use this function in your Countries component like so:
+
+jsx
+Copy code
+import React, { useEffect, useState, useRef } from 'react';
+import { fetchCountries } from './api'; // Update this path to point to your api.js file
+
+const LIMIT = 15;
+
+const Countries = () => {
+    const [countries, setCountries] = useState([]);
+    const [filteredCountries, setFilteredCountries] = useState([]);
+    const [searchString, setSearchString] = useState('');
+    const [start, setStart] = useState(0);
+    const abortController = useRef(new AbortController());
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetchCountries();
+                if (!abortController.current.signal.aborted) {
+                    setCountries(response.data);
+                    setFilteredCountries(response.data);
+                }
+            } catch (error) {
+                if (!abortController.current.signal.aborted) {
+                    console.error('Failed to fetch countries:', error);
+                }
+            }
+        };
+        fetchData();
+        return () => {
+            abortController.current.abort();
+        };
+    }, []);
+
+    useEffect(() => {
+        const lowerCaseSearchString = searchString.toLowerCase();
+        setFilteredCountries(countries.filter(country => country.name.common.toLowerCase().includes(lowerCaseSearchString)));
+    }, [searchString, countries]);
+
+    const handleNext = () => {
+        setStart(oldStart => Math.min(oldStart + LIMIT, filteredCountries.length - 1));
+    };
+
+    const handlePrev = () => {
+        setStart(oldStart => Math.max(oldStart - LIMIT, 0));
+    };
+
+    return (
+        <div>
+            <input type="text" value={searchString} onChange={e => setSearchString(e.target.value)} />
+            {filteredCountries.slice(start, start + LIMIT).map((country, index) => (
+                <p key={index}>{country.name.common}</p>
+            ))}
+            <button onClick={handlePrev}>Prev</button>
+            <button onClick={handleNext}>Next</button>
+        </div>
+    );
+};
+
+export default Countries;
+In this updated Countries component, we added a new useState call to store the search string, and a new useEffect call that runs whenever the search string or the list of countries changes. This useEffect call updates filteredCountries by filtering countries based on whether their name/common contains the search string, ignoring case.
+
+We also added an input field that updates the search string whenever its value changes. The onChange attribute of the input field is set to a function that calls setSearchString with the input field's new value.
+
+Now, when you type in the search field, the list of countries updates in real time to only include countries where the name/common contains the search string, ignoring case. The pagination still works as before, but now it's based on the number of filtered countries, not all countries.
+
+
+
+
+
+User
+since logic inside the components grows, let's create a custom hook with pagination and filter state that returns a list of countries to display, as well as pagination methods. Also it is a good idea to introduce deferedQuery since the search prompt could change frequently
+ChatGPT
+Great idea, abstracting complex logic into a custom hook can improve readability and maintainability of your component. Let's create a custom hook called useCountryPagination:
+
+jsx
+Copy code
+import { useState, useEffect, useRef } from 'react';
+import { fetchCountries } from './api'; // Update this path to point to your api.js file
+
+const LIMIT = 15;
+
+const useCountryPagination = (searchString) => {
+    const [countries, setCountries] = useState([]);
+    const [start, setStart] = useState(0);
+    const [deferredQuery, setDeferredQuery] = useState(searchString);
+    const abortController = useRef(new AbortController());
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetchCountries();
+                if (!abortController.current.signal.aborted) {
+                    setCountries(response.data);
+                }
+            } catch (error) {
+                if (!abortController.current.signal.aborted) {
+                    console.error('Failed to fetch countries:', error);
+                }
+            }
+        };
+        fetchData();
+        return () => {
+            abortController.current.abort();
+        };
+    }, []);
+
+    useEffect(() => {
+        const handle = setTimeout(() => {
+            setDeferredQuery(searchString);
+        }, 500);
+        return () => {
+            clearTimeout(handle);
+        };
+    }, [searchString]);
+
+    const handleNext = () => {
+        setStart(oldStart => Math.min(oldStart + LIMIT, countries.length - 1));
+    };
+
+    const handlePrev = () => {
+        setStart(oldStart => Math.max(oldStart - LIMIT, 0));
+    };
+
+    const lowerCaseSearchString = deferredQuery.toLowerCase();
+    const filteredCountries = countries.filter(country => country.name.common.toLowerCase().includes(lowerCaseSearchString));
+    const displayedCountries = filteredCountries.slice(start, start + LIMIT);
+
+    return { displayedCountries, handleNext, handlePrev };
+};
+This hook encapsulates the country fetching, filtering and pagination logic. The useEffect that fetches the countries from the API is the same as before.
+
+The useEffect that updates deferredQuery uses a timeout to delay the update by 500 milliseconds. This means that if the user types multiple characters quickly, the filter won't update for each character, but only once after the user stops typing for at least 500 milliseconds. This can significantly reduce the number of updates when the user is typing quickly.
+
+The handleNext and handlePrev functions are also the same as before, but now they're returned from the hook so they can be used in the component.
+
+Finally, the hook returns an object containing the list of countries to display (displayedCountries) and the pagination functions (handleNext and handlePrev).
+
+Here's how you can use the custom hook in your Countries component:
+
+jsx
+Copy code
+import React, { useState } from 'react';
+import useCountryPagination from './useCountryPagination'; // Update this path to point to your useCountryPagination hook
+
+const Countries = () => {
+    const [searchString, setSearchString] = useState('');
+    const { displayedCountries, handleNext, handlePrev } = useCountryPagination(searchString);
+
+    return (
+        <div>
+            <input type="text" value={searchString} onChange={e => setSearchString(e.target.value)} />
+            {displayedCountries.map((country, index) => (
+                <p key={index}>{country.name.common}</p>
+            ))}
+            <button onClick={handlePrev}>Prev</button>
+            <button onClick={handleNext}>Next</button>
+        </div>
+    );
+};
+
+export default Countries;
+Now your Countries component is much simpler and easier to read, and you can reuse the pagination and filtering logic in other components if you need to.

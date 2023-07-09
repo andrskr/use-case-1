@@ -2,8 +2,7 @@ import { useState } from "react";
 
 import styles from "./country-filter.module.css";
 
-export function CountryFilter() {
-  const [countryName, setCountryName] = useState("");
+export function CountryFilter({ onQueryChange, query }) {
   const [countryPopulation, setCountryPopulation] = useState("");
   const [sortOrder, setSortOrder] = useState("ascending");
 
@@ -21,8 +20,8 @@ export function CountryFilter() {
           type="text"
           id="country-name"
           name="country-name"
-          value={countryName}
-          onChange={(e) => setCountryName(e.target.value)}
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
         />
       </div>
       <div className={styles.formGroup}>

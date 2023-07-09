@@ -1,47 +1,19 @@
 import { useEffect, useState } from "react";
+import { useCountries } from "./use-countries";
 
-import { getAll } from "../../common/api/country";
-
-const LIMIT = 15;
-
-export function Countries() {
-  const [countries, setCountries] = useState([]);
-  const [start, setStart] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchData = async () => {
-      try {
-        const response = await getAll();
-        if (!controller.signal.aborted) {
-          setCountries(response.data);
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          console.error("Failed to fetch countries:", error);
-        }
-      }
-    };
-
-    void fetchData();
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
-  const handleNext = () => {
-    setStart((oldStart) => Math.min(oldStart + LIMIT, countries.length - 1));
-  };
-
-  const handlePrev = () => {
-    setStart((oldStart) => Math.max(oldStart - LIMIT, 0));
-  };
+export function Countries({ query }) {
+  const { countries, handleNext, handlePrev, isStale } = useCountries(query);
 
   return (
-    <div>
-      {countries.slice(start, start + LIMIT).map((country, index) => (
+    <div
+      style={{
+        opacity: isStale ? 0.5 : 1,
+        transition: isStale
+          ? "opacity 0.2s 0.2s linear"
+          : "opacity 0s 0s linear",
+      }}
+    >
+      {countries.map((country, index) => (
         <p key={index}>{country.name.common}</p>
       ))}
       <button onClick={handlePrev}>Prev</button>

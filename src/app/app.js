@@ -3,8 +3,10 @@ import { Pagination } from "../components/pagination";
 import { Countries } from "../components/countries/countries";
 
 import styles from "./app.module.css";
+import { useState } from "react";
 
 export function App() {
+  const [query, setQuery] = useState("");
   const handlePrevPage = () => {
     // Add your logic for loading the previous page here
   };
@@ -15,9 +17,9 @@ export function App() {
 
   return (
     <main className={styles.container}>
-      <CountryFilter />
-      <Countries />
-      <Pagination onNextPage={handleNextPage} onPrevPage={handlePrevPage} />
+      <CountryFilter onQueryChange={setQuery} query={query} />
+      <Countries query={query} />
+      {/*<Pagination onNextPage={handleNextPage} onPrevPage={handlePrevPage} />*/}
     </main>
   );
 }
