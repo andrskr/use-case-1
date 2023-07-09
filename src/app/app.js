@@ -7,6 +7,7 @@ import { useState } from "react";
 
 export function App() {
   const [query, setQuery] = useState("");
+  const [populationLimit, setPopulationLimit] = useState(Infinity);
   const handlePrevPage = () => {
     // Add your logic for loading the previous page here
   };
@@ -17,8 +18,13 @@ export function App() {
 
   return (
     <main className={styles.container}>
-      <CountryFilter onQueryChange={setQuery} query={query} />
-      <Countries query={query} />
+      <CountryFilter
+        onQueryChange={setQuery}
+        query={query}
+        populationLimit={populationLimit}
+        setPopulationLimit={setPopulationLimit}
+      />
+      <Countries query={query} populationLimit={populationLimit} />
       {/*<Pagination onNextPage={handleNextPage} onPrevPage={handlePrevPage} />*/}
     </main>
   );

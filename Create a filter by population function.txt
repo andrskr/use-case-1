@@ -1,0 +1,178 @@
+My third task has the following requirements:
+Create a function that accepts a number as an attribute and can filter by ` population `.
+
+The filter should search for countries where the population is less than provided number from attributes in the millions of people (e.g., by providing value `10`, I should find countries with a population less than 10m)
+ChatGPT
+You can achieve this by creating a filter function that checks if the population of each country is less than the provided number. Here is how you can adjust the hook to filter by population:
+
+jsx
+Copy code
+import { useState, useEffect, useRef } from 'react';
+import { fetchCountries } from './api'; // Update this path to point to your api.js file
+
+const LIMIT = 15;
+
+const useCountryPagination = (searchString, populationLimit) => {
+    const [countries, setCountries] = useState([]);
+    const [start, setStart] = useState(0);
+    const [deferredQuery, setDeferredQuery] = useState(searchString);
+    const abortController = useRef(new AbortController());
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetchCountries();
+                if (!abortController.current.signal.aborted) {
+                    setCountries(response.data);
+                }
+            } catch (error) {
+                if (!abortController.current.signal.aborted) {
+                    console.error('Failed to fetch countries:', error);
+                }
+            }
+        };
+        fetchData();
+        return () => {
+            abortController.current.abort();
+        };
+    }, []);
+
+    useEffect(() => {
+        const handle = setTimeout(() => {
+            setDeferredQuery(searchString);
+        }, 500);
+        return () => {
+            clearTimeout(handle);
+        };
+    }, [searchString]);
+
+    const handleNext = () => {
+        setStart(oldStart => Math.min(oldStart + LIMIT, countries.length - 1));
+    };
+
+    const handlePrev = () => {
+        setStart(oldStart => Math.max(oldStart - LIMIT, 0));
+    };
+
+    const lowerCaseSearchString = deferredQuery.toLowerCase();
+    const filteredCountries = countries.filter(country =>
+        country.name.common.toLowerCase().includes(lowerCaseSearchString) &&
+        country.population / 1_000_000 < populationLimit // filter by population here
+    );
+    const displayedCountries = filteredCountries.slice(start, start + LIMIT);
+
+    return { displayedCountries, handleNext, handlePrev };
+};
+Now, the filteredCountries not only include countries where the name/common includes the search string, but also countries where the population is less than the provided number in millions.
+
+And here's how you can use the custom hook in your Countries component:
+
+jsx
+Copy code
+import React, { useState } from 'react';
+import useCountryPagination from './useCountryPagination'; // Update this path to point to your useCountryPagination hook
+
+const Countries = () => {
+    const [searchString, setSearchString] = useState('');
+    const [populationLimit, setPopulationLimit] = useState(Infinity);
+    const { displayedCountries, handleNext, handlePrev } = useCountryPagination(searchString, populationLimit);
+
+    return (
+        <div>
+            <input type="text" value={searchString} onChange={e => setSearchString(e.target.value)} placeholder="Search by name" />
+            <input type="number" value={populationLimit} onChange={e => setPopulationLimit(e.target.value)} placeholder="Population limit (in millions)" />
+            {displayedCountries.map((country, index) => (
+                <p key={index}>{country.name.common} - Population: {country.population}</p>
+            ))}
+            <button onClick={handlePrev}>Prev</button>
+            <button onClick={handleNext}>Next</button>
+        </div>
+    );
+};
+
+export default Countries;
+In this updated Countries component, we added a new useState call to store the population limit, and a new input field that updates the population limit whenever its value changes. The onChange attribute of the input field is set to a function that calls setPopulationLimit with the input field's new value.
+
+Now, when you type in the population limit field, the list of countries updates in real time to only include countries where the population is less than the provided number in millions.
+
+
+
+
+
+User
+Do you even know something about React.useDeferredValue hook?
+ChatGPT
+Yes, React.useDeferredValue is a hook that allows you to defer an expensive calculation (like filtering or sorting a large list of items) that might cause your app to freeze or drop frames. It's especially useful when you want to ensure that certain operations, like user input, remain responsive even when a heavy computation is in progress.
+
+React.useDeferredValue essentially creates a value that may "lag behind" a bit while updates to the actual value are being processed. This can be useful in situations where maintaining a responsive interface is more important than having the absolute latest state available at all times.
+
+For example, suppose you have an input field where the user can type a search query, and you want to filter a list of items based on that query. If the list is very large, filtering it might take a significant amount of time, and doing so on every keystroke might cause your app to freeze. By using React.useDeferredValue, you can keep the input field responsive while the list is being filtered.
+
+Here's a basic example of how to use React.useDeferredValue:
+
+jsx
+Copy code
+import React from 'react';
+
+function SearchBox({data}) {
+  const [searchText, setSearchText] = React.useState('');
+
+  // This will ensure that searchText is not immediately updated, but deferred
+  const deferredSearchText = React.useDeferredValue(searchText, {timeoutMs: 200});
+
+  // Expensive computation - this will use the deferred value
+  const filteredData = data.filter(item => item.includes(deferredSearchText));
+
+  return (
+    <div>
+      <input value={searchText} onChange={e => setSearchText(e.target.value)} />
+      {/* render filteredData */}
+    </div>
+  );
+}
+In this example, typing in the search box won't be blocked by the filter operation. However, note that as of my knowledge cutoff in September 2021, the React.useDeferredValue hook is still experimental and may not yet be available in a stable release of React.
+
+
+
+
+
+User
+Can I store objects inside instead of primitives?
+ChatGPT
+Yes, you can store objects inside the state managed by React.useDeferredValue. It doesn't have to be a primitive value.
+
+The React.useDeferredValue hook works by allowing React to defer updating the state until it determines it's a good time to do so based on other tasks and priorities it has to handle. This can be beneficial in situations where you have a component that might cause expensive calculations during a render, and you want to keep the user interface responsive.
+
+When you're dealing with an object, you're deferring the entire object. So, if there's an update to any property of that object, the deferred value will lag behind the actual value until React gets a chance to catch up.
+
+Keep in mind that it's still important to follow React's rules for updating state. If you need to update an object or array in the state, you should create a new copy of it instead of modifying it directly to avoid unpredictable behavior.
+
+Also note that as of my knowledge cutoff in September 2021, the React.useDeferredValue hook is still experimental and may not yet be available in a stable release of React.
+
+
+
+
+
+User
+Please update this part since I don't want to apply the population filter function if there is no valid value defined for the population:
+const filteredCountries = countries.filter(country =>
+        country.name.common.toLowerCase().includes(lowerCaseSearchString) &&
+        country.population / 1_000_000 < populationLimit // filter by population here
+    );
+ChatGPT
+Sure, you can add a condition to only apply the population filter when populationLimit is a valid number. Here's how you can do it:
+
+jsx
+Copy code
+const filteredCountries = countries.filter(country => {
+    const isNameMatched = country.name.common.toLowerCase().includes(lowerCaseSearchString);
+
+    const isPopulationMatched = Number.isFinite(populationLimit)
+        ? country.population / 1_000_000 < populationLimit
+        : true;
+
+    return isNameMatched && isPopulationMatched;
+});
+In this updated code, isPopulationMatched is true when populationLimit is not a valid number, so the population filter is effectively ignored. When populationLimit is a valid number, isPopulationMatched is only true if the country's population is less than populationLimit. So, the population filter is only applied when populationLimit is a valid number.
+
+Please note that Number.isFinite will return false for NaN, Infinity, -Infinity, and non-number values. So, the population filter will be ignored when populationLimit is not a finite number.

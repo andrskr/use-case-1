@@ -2,8 +2,12 @@ import { useState } from "react";
 
 import styles from "./country-filter.module.css";
 
-export function CountryFilter({ onQueryChange, query }) {
-  const [countryPopulation, setCountryPopulation] = useState("");
+export function CountryFilter({
+  onQueryChange,
+  query,
+  populationLimit,
+  setPopulationLimit,
+}) {
   const [sortOrder, setSortOrder] = useState("ascending");
 
   const handleSubmit = (e) => {
@@ -30,8 +34,8 @@ export function CountryFilter({ onQueryChange, query }) {
           type="text"
           id="country-population"
           name="country-population"
-          value={countryPopulation}
-          onChange={(e) => setCountryPopulation(e.target.value)}
+          value={populationLimit}
+          onChange={(e) => setPopulationLimit(e.target.value)}
         />
       </div>
       <div className={styles.formGroup}>

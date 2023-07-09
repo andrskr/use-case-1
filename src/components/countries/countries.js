@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useCountries } from "./use-countries";
 
-export function Countries({ query }) {
-  const { countries, handleNext, handlePrev, isStale } = useCountries(query);
+export function Countries({ query, populationLimit }) {
+  const { countries, handleNext, handlePrev, isStale } = useCountries(
+    query,
+    populationLimit
+  );
 
   return (
     <div
