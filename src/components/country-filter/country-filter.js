@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import styles from "./country-filter.module.css";
 
 export function CountryFilter({
@@ -12,7 +10,6 @@ export function CountryFilter({
 }) {
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Add your API call here using countryName, countryPopulation, and sortOrder
   };
 
   return (

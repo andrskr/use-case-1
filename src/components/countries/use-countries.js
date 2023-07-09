@@ -1,11 +1,14 @@
-import { useState, useEffect, useRef, useMemo, useDeferredValue } from "react";
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
 import { getAll } from "../../common/api/country";
 
 const ONE_MIL = 1_000_000;
+const LIMIT = 15;
 
 export function useCountries(filters) {
   const [countries, setCountries] = useState([]);
+  const [offset, setOffset] = useState(0);
   const deferredFilters = useDeferredValue(filters);
+  const deferredOffset = useDeferredValue(offset);
 
   const isStale = filters !== deferredFilters;
 
@@ -32,6 +35,14 @@ export function useCountries(filters) {
     };
   }, []);
 
+  const goNext = () => {
+    setOffset((oldStart) => Math.min(oldStart + LIMIT, countries.length - 1));
+  };
+
+  const goPrev = () => {
+    setOffset((oldStart) => Math.max(oldStart - LIMIT, 0));
+  };
+
   const currentCountries = useMemo(() => {
     const lowerCaseSearchString = deferredFilters.query.toLowerCase();
     return countries
@@ -44,7 +55,7 @@ export function useCountries(filters) {
         );
 
         const isPopulationMatched = Number.isFinite(parsedPopulation)
-          ? country.population / 1_000_000 < parsedPopulation
+          ? country.population / ONE_MIL < parsedPopulation
           : true;
 
         return isNameMatched && isPopulationMatched;
@@ -60,12 +71,17 @@ export function useCountries(filters) {
       });
   }, [deferredFilters, countries]);
 
+  const paginatedCountries = useMemo(
+    () => currentCountries.slice(deferredOffset, deferredOffset + LIMIT),
+    [currentCountries, deferredOffset]
+  );
+
   return {
-    countries: currentCountries.slice(
-      deferredFilters.offset,
-      deferredFilters.offset + deferredFilters.limit
-    ),
+    countries: paginatedCountries,
     isStale,
-    totalCount: currentCountries.length,
+    goNext,
+    goPrev,
+    canNext: deferredOffset < currentCountries.length - LIMIT,
+    canPrev: deferredOffset > 0,
   };
 }

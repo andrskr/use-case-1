@@ -3,24 +3,14 @@ import { useMemo, useState } from "react";
 import { useCountries } from "./use-countries";
 import { Pagination } from "../pagination";
 
-const LIMIT = 15;
-
 export function Countries({ query, populationLimit, sortOrder }) {
-  const [offset, setOffset] = useState(0);
   const filters = useMemo(
-    () => ({ query, populationLimit, sortOrder, offset, limit: LIMIT }),
-    [query, populationLimit, sortOrder, offset]
+    () => ({ query, populationLimit, sortOrder }),
+    [query, populationLimit, sortOrder]
   );
 
-  const { countries, totalCount = 0, isStale } = useCountries(filters);
-
-  const handleNext = () => {
-    setOffset((oldStart) => Math.min(oldStart + LIMIT, totalCount));
-  };
-
-  const handlePrev = () => {
-    setOffset((oldStart) => Math.max(oldStart - LIMIT, 0));
-  };
+  const { countries, goPrev, goNext, canNext, canPrev, isStale } =
+    useCountries(filters);
 
   return (
     <div
@@ -35,10 +25,10 @@ export function Countries({ query, populationLimit, sortOrder }) {
         <p key={index}>{country.name.common}</p>
       ))}
       <Pagination
-        onNextPage={handleNext}
-        onPrevPage={handlePrev}
-        canPrev={offset > 0}
-        canNext={offset < totalCount - LIMIT}
+        onNextPage={goNext}
+        onPrevPage={goPrev}
+        canPrev={canPrev}
+        canNext={canNext}
       />
     </div>
   );
